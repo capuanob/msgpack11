@@ -7,7 +7,9 @@ extern "C" int LLVMFuzzerTestOneInput(uint8_t *data, size_t size) {
 
     std::string orig_string = fdp.ConsumeRemainingBytesAsString();
     std::string err;
-    auto deserialized = msgpack11::MsgPack::parse(orig_string, err);
-    std::string serialized = deserialized.dump();
+    auto objs = msgpack11::MsgPack::parse_multi(orig_string, err);
+    for (const auto& obj : objs) {
+        obj.dump();
+    }
     return 0;
 }

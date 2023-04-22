@@ -15,6 +15,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=Debug -DMSGPACK11_BUILD_TESTS=OFF -DMSGPACK11_BUILD
 # Package Stage
 FROM --platform=linux/amd64 ubuntu:22.04
 COPY --from=builder /src/build/mayhem/fuzz_pack /fuzz_pack
+COPY --from=builder /src/mayhem/testsuite /testsuite
 
 # Set up fuzzing!
 ENTRYPOINT []
