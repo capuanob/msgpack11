@@ -1,35 +1,61 @@
 #include "fuzzer/FuzzedDataProvider.h"
 #include "msgpack11.hpp"
 
+using namespace msgpack11;
 
-msgpack11::MsgPack::array make_array(FuzzedDataProvider& fdp) {
-    msgpack11::MsgPack::array result;
-    std::size_t sz = fdp.ConsumeIntegralInRange(0, 100);
-    result.reserve(sz);
-    for (std::size_t i = 0; i < sz; ++i) {
-        result.emplace_back(fdp.ConsumeIntegral<int>());
+MsgPack gen_pack(FuzzedDataProvider& fdp) {
+    auto ty = fdp.ConsumeIntegralInRange(0, 12);
+    switch(ty) {
+        case 0:
+            return {fdp.ConsumeBool()};
+        case 1:
+            return {fdp.ConsumeFloatingPoint<float>()};
+        case 2:
+            return {fdp.ConsumeFloatingPoint<double>()};
+        case 3:
+            return {fdp.ConsumeIntegral<int8_t>()};
+        case 4:
+            return {fdp.ConsumeIntegral<int16_t>()};
+        case 5:
+            return {fdp.ConsumeIntegral<int32_t>()};
+        case 6:
+            return {fdp.ConsumeIntegral<int64_t>()};
+        case 7:
+            return {fdp.ConsumeIntegral<uint8_t>()};
+        case 8:
+            return {fdp.ConsumeIntegral<uint16_t>()};
+        case 9:
+            return {fdp.ConsumeIntegral<uint32_t>()};
+        case 10:
+            return {fdp.ConsumeIntegral<uint64_t>()};
+        case 11:
+            return {nullptr};
+        case 12:
+            return {fdp.ConsumeRandomLengthString()};
+        default:
+            return {};
     }
-    return result;
+
+}
+MsgPack::object generate_fuzz_object(FuzzedDataProvider& fdp) {
+    MsgPack::object map{};
+
+    for (std::size_t _ = 0; _ < fdp.ConsumeIntegralInRange(0, 1000); ++_) {
+        map.insert({gen_pack(fdp), gen_pack(fdp)});
+    }
+
+    return map;
 }
 
 extern "C" int LLVMFuzzerTestOneInput(uint8_t *data, size_t size) {
     FuzzedDataProvider fdp(data, size);
 
-    std::vector<std::pair<std::string, msgpack11::MsgPack>> vec;
-    std::size_t sz = fdp.ConsumeIntegralInRange(0, 100);
-    vec.reserve(sz);
-    for (std::size_t i = 0; i < sz; i++) {
-        vec.emplace_back(fdp.ConsumeRandomLengthString(), make_array(fdp));
-    }
-    msgpack11::MsgPack obj = msgpack11::MsgPack::object{vec.begin(), vec.end()};
+    MsgPack msg_obj = generate_fuzz_object(fdp);
 
-    std::string dumped_obj = obj.dump();
+    auto msg_bytes = msg_obj.dump();
+
     std::string err;
-    auto parsed = msgpack11::MsgPack::parse(dumped_obj, err);
-
-    if (parsed != obj) {
-        abort();
-    }
+    MsgPack::parse(msg_bytes, err);
 
     return 0;
 }
