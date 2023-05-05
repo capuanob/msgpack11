@@ -5,8 +5,7 @@ option(MSGPACK11_BUILD_TESTS "Build unit tests" ON)
 option(MSGPACK11_BUILD_FUZZER "Build fuzzer" OFF)
 
 if (MSGPACK11_BUILD_FUZZER)
-  add_compile_options(-fsanitize=fuzzer-no-link,address,undefined)
-  add_link_options(-fsanitize=address,undefined)
+  add_compile_options(-fsanitize=fuzzer-no-link)
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
